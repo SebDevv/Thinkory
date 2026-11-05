@@ -1,0 +1,14 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+
+# IDE
+.idea/
+.vscode/
+
+# Generated files
+*.freezed.dart
+*.g.dart
