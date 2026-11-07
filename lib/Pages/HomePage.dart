@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:thinkory/Core/Theme/app_colors.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:flutter/material.dart';
 
@@ -40,6 +41,53 @@ class _HomepageState extends State<Homepage> {
         : remainingCapacity;
   }
 
+  final List<int> streakMilestones = [7, 14, 30, 100];
+
+  int get nextStreakMilestone {
+    return streakMilestones.firstWhere(
+      (milestone) => milestone > currentStreak,
+      orElse: () => currentStreak,
+    );
+  }
+
+  double get streakProgress {
+    final previousMilestone =
+        streakMilestones
+            .where((milestone) => milestone <= currentStreak)
+            .lastOrNull ??
+        0;
+
+    final nextMilestone = nextStreakMilestone;
+
+    if (nextMilestone == previousMilestone) return 1;
+
+    return (currentStreak - previousMilestone) /
+        (nextMilestone - previousMilestone);
+  }
+
+  int currentStreak = 5;
+
+  String dateKey(DateTime date) {
+    return '${date.year}-${date.month}-${date.day}';
+  }
+
+  // Temporary activity data for testing.
+  // These dates move with the current date.
+  Set<String> get completedGameDates {
+    final today = DateTime.now();
+
+    return {
+      dateKey(today.subtract(const Duration(days: 6))),
+      dateKey(today.subtract(const Duration(days: 5))),
+      dateKey(today.subtract(const Duration(days: 4))),
+      dateKey(today.subtract(const Duration(days: 3))),
+      dateKey(today.subtract(const Duration(days: 2))),
+    };
+  }
+
+  bool get isDark => Theme.of(context).brightness == Brightness.dark;
+
+  String selectedDifficulty = 'Medium';
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -59,12 +107,66 @@ class _HomepageState extends State<Homepage> {
               ),
 
               const SizedBox(height: 48),
-
-              // Daily challenge
               Text(
-                "Your Streak!",
+                "Your Streak",
                 style: Theme.of(context).textTheme.titleLarge,
               ),
+              SizedBox(height: 12),
+              // Player Streak
+              Card(
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        _buildStreakDays(),
+                        const SizedBox(height: 24),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Next milestone',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                            Text(
+                              '$nextStreakMilestone days',
+                              style: Theme.of(context).textTheme.titleSmall,
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: LinearProgressIndicator(
+                            value: streakProgress,
+                            minHeight: 8,
+                            backgroundColor: isDark
+                                ? Colors.white.withOpacity(0.12)
+                                : Colors.black.withOpacity(0.08),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              isDark
+                                  ? AppColors.softMint
+                                  : AppColors.forestGreen,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        Text(
+                          '${(streakProgress * 100).round()}% towards your next milestone',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
               const SizedBox(height: 32),
               // Daily challenge
               Text(
@@ -73,19 +175,8 @@ class _HomepageState extends State<Homepage> {
               ),
 
               const SizedBox(height: 16),
-
-              // We'll build the challenge card here.
-              const SizedBox(height: 32),
-
+              _buildTodaysChallengeCard(),
               // Your progress
-              IconButton(
-                onPressed: () {
-                  setState(() {
-                    availablePoints += 100;
-                  });
-                },
-                icon: Icon(PhosphorIcons.basketBold),
-              ),
             ],
           ),
         ),
@@ -466,11 +557,6 @@ class _HomepageState extends State<Homepage> {
   }
 
   Widget _pointsCard() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final mint = const Color(0xFFB8E6D1);
-    final forestGreen = const Color(0xFF103B32);
-
     return ClipRRect(
       borderRadius: BorderRadius.circular(30),
       child: BackdropFilter(
@@ -479,13 +565,13 @@ class _HomepageState extends State<Homepage> {
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
           decoration: BoxDecoration(
             color: isDark
-                ? mint.withValues(alpha: 0.10)
+                ? AppColors.softMint.withValues(alpha: 0.10)
                 : Colors.white.withValues(alpha: 0.75),
             borderRadius: BorderRadius.circular(30),
             border: Border.all(
               color: isDark
-                  ? mint.withValues(alpha: 0.25)
-                  : forestGreen.withValues(alpha: 0.15),
+                  ? AppColors.softMint.withValues(alpha: 0.25)
+                  : AppColors.forestGreen.withValues(alpha: 0.15),
             ),
           ),
           child: Row(
@@ -496,7 +582,7 @@ class _HomepageState extends State<Homepage> {
                 onTap: showHowToEarnPoints,
                 child: Icon(
                   PhosphorIcons.starBold,
-                  color: isDark ? mint : forestGreen,
+                  color: isDark ? AppColors.softMint : AppColors.forestGreen,
                   size: 24,
                 ),
               ),
@@ -506,7 +592,7 @@ class _HomepageState extends State<Homepage> {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : forestGreen,
+                  color: isDark ? Colors.white : AppColors.forestGreen,
                 ),
               ),
 
@@ -516,7 +602,7 @@ class _HomepageState extends State<Homepage> {
                 onTap: showHintPurchaseSheet,
                 child: Icon(
                   PhosphorIcons.lightbulbBold,
-                  color: isDark ? mint : forestGreen,
+                  color: isDark ? AppColors.softMint : AppColors.forestGreen,
                   size: 24,
                 ),
               ),
@@ -526,7 +612,7 @@ class _HomepageState extends State<Homepage> {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : forestGreen,
+                  color: isDark ? Colors.white : AppColors.forestGreen,
                 ),
               ),
 
@@ -536,7 +622,7 @@ class _HomepageState extends State<Homepage> {
                 onTap: showSkipPurchaseSheet,
                 child: Icon(
                   PhosphorIcons.fastForwardBold,
-                  color: isDark ? mint : forestGreen,
+                  color: isDark ? AppColors.softMint : AppColors.forestGreen,
                   size: 24,
                 ),
               ),
@@ -546,11 +632,251 @@ class _HomepageState extends State<Homepage> {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : forestGreen,
+                  color: isDark ? Colors.white : AppColors.forestGreen,
+                ),
+              ),
+              SizedBox(width: 20),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    availablePoints += 100;
+                  });
+                },
+                child: Icon(
+                  PhosphorIcons.plusCircleBold,
+                  color: isDark ? AppColors.softMint : AppColors.forestGreen,
+                  size: 24,
                 ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStreakDays() {
+    final today = DateTime.now();
+
+    const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+    return Row(
+      children: List.generate(7, (index) {
+        final date = today.subtract(Duration(days: 6 - index));
+        final completed = completedGameDates.contains(dateKey(date));
+        final isToday = dateKey(date) == dateKey(today);
+
+        return Expanded(
+          child: Column(
+            children: [
+              Text(
+                dayLabels[date.weekday - 1],
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 8),
+              Icon(
+                completed ? PhosphorIcons.medalFill : PhosphorIcons.medal,
+                size: 28,
+                color: completed
+                    ? isDark
+                          ? AppColors.softMint
+                          : AppColors.forestGreen
+                    : Theme.of(context).disabledColor,
+              ),
+              const SizedBox(height: 4),
+              SizedBox(
+                height: 24,
+                child: isToday
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? AppColors.softMint.withOpacity(0.15)
+                              : AppColors.forestGreen.withOpacity(0.10),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'Today',
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: isDark
+                                    ? AppColors.softMint
+                                    : AppColors.forestGreen,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            ],
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _buildTodaysChallengeCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Challenge label
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'DAILY CHALLENGE',
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
+                Icon(PhosphorIcons.calendarBlank, size: 18),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            // Game information
+            Row(
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.deepSage : AppColors.paleMint,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    PhosphorIcons.puzzlePiece,
+                    size: 32,
+                    color: isDark ? AppColors.softMint : AppColors.forestGreen,
+                  ),
+                ),
+
+                const SizedBox(width: 14),
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Daily Maze',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "Find your way through today's maze.",
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 24),
+
+            // Difficulty selection
+            Text(
+              'Choose your difficulty',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+
+            const SizedBox(height: 12),
+
+            Row(
+              children: ['Easy', 'Medium', 'Hard', 'Expert'].map((difficulty) {
+                final isSelected = selectedDifficulty == difficulty;
+
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 3),
+                    child: ChoiceChip(
+                      label: Text(difficulty),
+                      selected: isSelected,
+                      showCheckmark: false,
+                      onSelected: (selected) {
+                        if (selected) {
+                          setState(() {
+                            selectedDifficulty = difficulty;
+                          });
+                        }
+                      },
+                      backgroundColor: isDark
+                          ? AppColors.charcoal
+                          : AppColors.warmCream,
+                      selectedColor: isDark
+                          ? AppColors.deepSage
+                          : AppColors.paleMint,
+                      side: BorderSide(
+                        color: isSelected
+                            ? (isDark
+                                  ? AppColors.softMint
+                                  : AppColors.forestGreen)
+                            : Theme.of(context).dividerColor,
+                      ),
+                      labelStyle: TextStyle(
+                        fontSize: 11,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.normal,
+                        color: isSelected
+                            ? (isDark
+                                  ? AppColors.softMint
+                                  : AppColors.forestGreen)
+                            : Theme.of(context).textTheme.bodyMedium?.color,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+
+            const SizedBox(height: 20),
+
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Starting Daily Maze - $selectedDifficulty',
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(PhosphorIcons.play),
+                label: const Text('Play Challenge'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isDark
+                      ? AppColors.softMint
+                      : AppColors.forestGreen,
+                  foregroundColor: isDark
+                      ? AppColors.forestGreen
+                      : Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  textStyle: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
